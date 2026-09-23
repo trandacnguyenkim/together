@@ -1,0 +1,19 @@
+{
+  "name": "together",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=server & npm run dev --workspace=client",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "build": "npm run build --workspace=client",
+    "setup": "docker pull node:20-alpine"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
