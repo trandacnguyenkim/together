@@ -63,9 +63,9 @@ const flushNow = async (docName: string, doc: WSSharedDoc): Promise<void> => {
 }
 
 export const filePersistence: Persistence = {
-  bindState: (docName, doc) => {
+  bindState: async (docName, doc) : Promise<void> => {
     const dest = filePath(docName)
-    fs.readFile(dest)
+    await fs.readFile(dest)
       .then((buf) => {
         Y.applyUpdate(doc, buf, 'persistence')
       })

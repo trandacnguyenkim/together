@@ -34,7 +34,7 @@ const wsReadyStateOpen = 1
 const gcEnabled = process.env.GC !== 'false' && process.env.GC !== '0'
 
 export interface Persistence {
-  bindState: (docName: string, doc: WSSharedDoc) => void
+  bindState: (docName: string, doc: WSSharedDoc) => Promise<void>
   writeState: (docName: string, doc: WSSharedDoc) => Promise<unknown>
 }
 
@@ -64,6 +64,7 @@ export class WSSharedDoc extends Y.Doc {
   /** conn -> set of awareness client ids that connection controls */
   conns: Map<WebSocket, Set<number>>
   awareness: awarenessProtocol.Awareness
+  whenLoaded: Promise<void> = Promise.resolve()
 
   constructor(name: string) {
     super({ gc: gcEnabled })
@@ -108,7 +109,7 @@ export const getYDoc = (docName: string, gc = true): WSSharedDoc =>
     const doc = new WSSharedDoc(docName)
     doc.gc = gc
     if (persistence !== null) {
-      persistence.bindState(docName, doc)
+      doc.whenLoaded = persistence.bindState(docName, doc)
     }
     docs.set(docName, doc)
     return doc
@@ -159,8 +160,9 @@ const closeConn = (doc: WSSharedDoc, conn: WebSocket) => {
       // active jobs and skips this path while one is in flight.)
       persistence.writeState(doc.name, doc).then(() => {
         doc.destroy()
+        docs.delete(doc.name)
       })
-      docs.delete(doc.name)
+      
     }
   }
   conn.close()
@@ -187,7 +189,7 @@ export interface SetupWSConnectionOptions {
   gc?: boolean
 }
 
-export const setupWSConnection = (
+export const setupWSConnection = async (
   conn: WebSocket,
   _req: IncomingMessage,
   { docName, gc = true }: SetupWSConnectionOptions,
@@ -197,7 +199,7 @@ export const setupWSConnection = (
   doc.conns.set(conn, new Set())
 
   conn.on('message', (message: ArrayBuffer) =>
-    messageListener(conn, doc, new Uint8Array(message)),
+    void doc.whenLoaded.then(() => messageListener(conn, doc, new Uint8Array(message))),
   )
 
   let pongReceived = true
