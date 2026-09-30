@@ -4,6 +4,7 @@ import { Editor } from './editor/Editor.js'
 import { useYjs } from './editor/useYjs.js'
 import { useLocalUser } from './editor/presence.js'
 import { PresenceBar } from './editor/PresenceBar.js'
+import { AIPanel } from './editor/AIPanel.js'
 
 interface HealthResponse {
   ok: boolean
@@ -67,8 +68,12 @@ export function App() {
         </div>
         <PresenceBar provider={yjs?.provider ?? null} localUser={localUser} connected={yjs?.connected ?? false} />
       </header>
-      <div style={{ flex: 1, minHeight: 0 }}>
-        <Editor onMount={handleEditorMount} />
+
+      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <Editor onMount={handleEditorMount} />
+        </div>
+        <AIPanel />
       </div>
     </div>
   )
