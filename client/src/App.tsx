@@ -73,7 +73,7 @@ export function App() {
         <div style={{ flex: 1, minHeight: 0 }}>
           <Editor onMount={handleEditorMount} />
         </div>
-        <AIPanel />
+        <AIPanel ydoc={yjs?.ydoc ?? null} editor={editor} />
       </div>
     </div>
   )

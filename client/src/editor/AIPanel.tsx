@@ -1,6 +1,13 @@
 import { useState } from 'react'
+import type * as monaco from 'monaco-editor'
+import * as Y from 'yjs'
 
 const ENABLED_KEY = 'together:ai-enabled'
+
+interface AIPanelProps {
+    ydoc: Y.Doc | null 
+    editor: monaco.editor.IStandaloneCodeEditor | null 
+}
 
 const readStoredEnabled = (): boolean => {
   try {
@@ -11,7 +18,7 @@ const readStoredEnabled = (): boolean => {
   }
 }
 
-export function AIPanel() {
+export function AIPanel({ydoc, editor} : AIPanelProps) {
   const [enabled, setEnabled] = useState(readStoredEnabled)
 
   const toggleEnabled = () => {
@@ -31,22 +38,57 @@ export function AIPanel() {
     id: string
     explanation: string 
     diffPreview: string
+    anchorStart: Y.RelativePosition
+    anchorEnd: Y.RelativePosition
   }
 
   const [pending, setPending] = useState<Suggestion | null>(null)
 
   const handleAsk = () => {
-    if (enabled && prompt.trim()){
-        setTimeout(() => setPending({
-            id: crypto.randomUUID(),
-            explanation: 'place holder explanation',
-            diffPreview: '+++ diff'
-        }), 600)
-    }
+    if (!editor || !ydoc || !enabled || !prompt.trim()) return
+
+    const selection = editor.getSelection()
+    const model = editor.getModel()
+    if (!selection || !model) return
+
+    const ytext = ydoc.getText('monaco')
+    const startOffset = model.getOffsetAt(selection.getStartPosition())
+    const endOffset = model.getOffsetAt(selection.getEndPosition())
+    const anchorStart = Y.createRelativePositionFromTypeIndex(ytext, startOffset)
+    const anchorEnd = Y.createRelativePositionFromTypeIndex(ytext, endOffset)
+
+    setTimeout(() => setPending({
+      id: crypto.randomUUID(),
+      explanation: 'place holder explanation',
+      diffPreview: '+++ diff',
+      anchorStart,
+      anchorEnd,
+    }), 600)
   }
 
   const handleAccept = () => {
-    console.log('accept', pending?.id)
+    if (!pending || !ydoc) {
+      setPending(null)
+      return
+    }
+
+    const ytext = ydoc.getText('monaco')
+    const start = Y.createAbsolutePositionFromRelativePosition(pending.anchorStart, ydoc)
+    const end = Y.createAbsolutePositionFromRelativePosition(pending.anchorEnd, ydoc)
+
+    if (!start || !end) {
+      console.warn('suggestion is stale — the anchored text no longer exists, discarding')
+      setPending(null)
+      return
+    }
+
+    ydoc.transact(() => {
+      if (end.index > start.index) {
+        ytext.delete(start.index, end.index - start.index)
+      }
+      ytext.insert(start.index, pending.diffPreview)
+    })
+
     setPending(null)
   }
 
