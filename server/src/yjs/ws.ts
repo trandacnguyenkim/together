@@ -47,9 +47,34 @@ export const setPersistence = (persistence_: Persistence | null) => {
 export const getPersistence = (): Persistence | null => persistence
 
 export const docs = new Map<string, WSSharedDoc>()
+const activeAIJobs = new Map<string, number>()
 
 const messageSync = 0
 const messageAwareness = 1
+
+export const beginAIJob = (docname: string) : void => {
+  activeAIJobs.set(docname, (activeAIJobs.get(docname) ?? 0) + 1)
+}
+
+export const endAIJob = (docname: string) : void => {
+  activeAIJobs.set(docname, (activeAIJobs.get(docname) ?? 0) - 1)
+
+  if (activeAIJobs.get(docname) === 0){
+    activeAIJobs.delete(docname)
+    destroyIfIdle(docname)
+  }
+}
+
+const destroyIfIdle = (docName: string): void => {
+  const doc = docs.get(docName)
+  if (!doc) return
+  if (doc.conns.size === 0 && (activeAIJobs.get(docName) ?? 0) === 0 && persistence !== null) {
+    persistence.writeState(doc.name, doc).then(() => {
+      doc.destroy()
+      docs.delete(doc.name)
+    })
+  }
+}
 
 const updateHandler = (update: Uint8Array, _origin: unknown, doc: WSSharedDoc) => {
   const encoder = encoding.createEncoder()
@@ -153,17 +178,7 @@ const closeConn = (doc: WSSharedDoc, conn: WebSocket) => {
     const controlledIds = doc.conns.get(conn) as Set<number>
     doc.conns.delete(conn)
     awarenessProtocol.removeAwarenessStates(doc.awareness, Array.from(controlledIds), null)
-    if (doc.conns.size === 0 && persistence !== null) {
-      // Last connection dropped: persist and free the doc. (Note: if an AI
-      // generation job is still writing to this doc when the last tab
-      // closes, this races the write — see the AI route, which refcounts
-      // active jobs and skips this path while one is in flight.)
-      persistence.writeState(doc.name, doc).then(() => {
-        doc.destroy()
-        docs.delete(doc.name)
-      })
-      
-    }
+    destroyIfIdle(doc.name)
   }
   conn.close()
 }
