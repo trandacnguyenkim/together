@@ -8,7 +8,7 @@ healthRouter.get('/health', async (_req, res) => {
   res.json({
     ok: true,
     docker,
-    anthropicKeyConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
+    groqKeyConfigured: Boolean(process.env.GROQ_API_KEY),
     cloudflareConfigured: Boolean(
       process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID,
     ),

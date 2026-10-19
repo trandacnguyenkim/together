@@ -7,6 +7,7 @@ import { setupWSConnection, setPersistence, docs } from './yjs/ws.js'
 import { filePersistence, flushAllOnExit } from './yjs/persistence.js'
 import { ensureImagePulled } from './docker/client.js'
 import { healthRouter } from './routes/health.js'
+import { AIRouter } from './routes/ai.js'
 
 const PORT = Number(process.env.PORT ?? 3001)
 
@@ -15,6 +16,7 @@ setPersistence(filePersistence)
 const app = express()
 app.use(express.json())
 app.use('/api', healthRouter)
+app.use('/api', AIRouter)
 
 const server = http.createServer(app)
 
@@ -46,8 +48,8 @@ server.listen(PORT, () => {
 
 // Boot-time checks that become UI banners, not runtime 500s.
 void ensureImagePulled()
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.warn('[server] ANTHROPIC_API_KEY is not set — the AI panel will be unavailable.')
+if (!process.env.GROQ_API_KEY) {
+  console.warn('[server] GROQ_API_KEY is not set — the AI panel will be unavailable.')
 }
 if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID) {
   console.warn('[server] CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set — Deploy will be unavailable.')
