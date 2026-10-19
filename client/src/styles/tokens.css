@@ -1,0 +1,252 @@
+:root {
+  --color-bg: #f5efe0;
+  --color-surface: #ffffff;
+  --color-surface-editor: #fbf8ef;
+  --color-ink: #16213e;
+  --color-ink-muted: #5b6477;
+  --color-accent: #c6861a;
+  --color-accent-ink: #ffffff;
+  --color-border: #16213e;
+  --color-border-bevel-light: #ffffff;
+  --color-border-bevel-dark: #9c8a5e;
+  --color-status-ok: #1f7a3d;
+  --color-status-error: #b3261e;
+
+  --font-display: 'Press Start 2P', system-ui, sans-serif;
+  --font-body: system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-button: 'VT323', var(--font-mono);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --border-width: 2px;
+  --border-width-panel: 3px;
+  --radius: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f1626;
+    --color-surface: #16213e;
+    --color-surface-editor: #0f1626;
+    --color-ink: #f2ead2;
+    --color-ink-muted: #aab3c7;
+    --color-accent: #f2c14e;
+    --color-accent-ink: #16213e;
+    --color-border: #f2ead2;
+    --color-border-bevel-light: #2a3a5e;
+    --color-border-bevel-dark: #060a14;
+    --color-status-ok: #3fcf72;
+    --color-status-error: #ff6b5e;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0f1626;
+  --color-surface: #16213e;
+  --color-surface-editor: #0f1626;
+  --color-ink: #f2ead2;
+  --color-ink-muted: #aab3c7;
+  --color-accent: #f2c14e;
+  --color-accent-ink: #16213e;
+  --color-border: #f2ead2;
+  --color-border-bevel-light: #2a3a5e;
+  --color-border-bevel-dark: #060a14;
+  --color-status-ok: #3fcf72;
+  --color-status-error: #ff6b5e;
+}
+
+:root[data-theme='light'] {
+  --color-bg: #f5efe0;
+  --color-surface: #ffffff;
+  --color-surface-editor: #fbf8ef;
+  --color-ink: #16213e;
+  --color-ink-muted: #5b6477;
+  --color-accent: #c6861a;
+  --color-accent-ink: #ffffff;
+  --color-border: #16213e;
+  --color-border-bevel-light: #ffffff;
+  --color-border-bevel-dark: #9c8a5e;
+  --color-status-ok: #1f7a3d;
+  --color-status-error: #b3261e;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+.pixel-header {
+  border-bottom: var(--border-width) solid var(--color-border);
+  background: var(--color-surface);
+}
+
+/* Static display frame — e.g. around the Monaco mount. No hover/press
+ * states; those live on .pixel-button below. */
+.pixel-border {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 1px 1px 0 var(--color-border-bevel-light),
+    inset -1px -1px 0 var(--color-border-bevel-dark);
+}
+
+.pixel-chip {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius);
+  border: var(--border-width) solid var(--color-border);
+  color: #fff;
+  font-size: 11px;
+  font-family: var(--font-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pixel-chip--local {
+  border-color: var(--color-accent);
+}
+
+.pixel-button {
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-button);
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+  box-shadow:
+    inset 1px 1px 0 var(--color-border-bevel-light),
+    inset -1px -1px 0 var(--color-border-bevel-dark);
+}
+
+.pixel-button--icon {
+  width: 32px;
+  padding: 0;
+}
+
+.pixel-button--primary {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border-color: var(--color-accent);
+}
+
+.pixel-button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.pixel-button--primary:hover:not(:disabled) {
+  border-color: var(--color-border);
+}
+
+.pixel-button:active:not(:disabled) {
+  box-shadow:
+    inset -1px -1px 0 var(--color-border-bevel-light),
+    inset 1px 1px 0 var(--color-border-bevel-dark);
+  filter: brightness(0.92);
+}
+
+.pixel-button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.pixel-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pixel-button--toggled {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border-color: var(--color-accent);
+  box-shadow:
+    inset -1px -1px 0 var(--color-border-bevel-light),
+    inset 1px 1px 0 var(--color-border-bevel-dark);
+}
+
+/* Whole-panel frame (the AI panel) — one border size up from .pixel-border,
+ * since it's a page region rather than a single control. */
+.pixel-panel {
+  border: var(--border-width-panel) solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow:
+    inset 1px 1px 0 var(--color-border-bevel-light),
+    inset -1px -1px 0 var(--color-border-bevel-dark);
+}
+
+.pixel-input {
+  height: 32px;
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+.pixel-input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.pixel-input:disabled {
+  opacity: 0.6;
+}
+
+.pixel-code {
+  background: var(--color-surface-editor);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  padding: var(--space-2);
+  margin: 0;
+  border: var(--border-width) solid var(--color-border);
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 10px);
+  transform: translateX(-20%);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: var(--border-width) solid var(--color-border);
+  padding: 4px 8px;
+  font-size: 10px;
+  font-family: var(--font-body);
+  text-transform: none;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s;
+  z-index: 1000;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  opacity: 1;
+}
+
+
