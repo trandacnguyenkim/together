@@ -111,10 +111,10 @@ export function AIPanel({ ydoc, editor }: AIPanelProps) {
 
   return (
     <div
+      className="pixel-panel"
       style={{
         width: 320,
         flexShrink: 0,
-        borderLeft: '1px solid #ddd',
         display: 'flex',
         flexDirection: 'column',
         padding: 12,
@@ -130,37 +130,37 @@ export function AIPanel({ ydoc, editor }: AIPanelProps) {
       >
         <input
           type="text"
+          className="pixel-input"
           value={prompt}
           disabled={isAsking}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Ask the AI..."
           style={{ flex: 1, minWidth: 0 }}
         />
-        <button type="submit" disabled={isAsking || !prompt.trim() || !editor || !ydoc}>
+        <button
+          type="submit"
+          className="pixel-button pixel-button--primary"
+          disabled={isAsking || !prompt.trim() || !editor || !ydoc}
+        >
           {isAsking ? '…' : 'Ask'}
         </button>
       </form>
 
-      {error && <p style={{ color: '#c33', fontSize: 12, margin: 0 }}>{error}</p>}
+      {error && <p style={{ color: 'var(--color-status-error)', fontSize: 12, margin: 0 }}>{error}</p>}
 
       {pending && (
-        <div style={{ border: '1px solid #ddd', borderRadius: 4, padding: 8 }}>
-          <p style={{ fontSize: 13, margin: '0 0 6px' }}>{pending.explanation}</p>
-          <pre
-            style={{
-              fontSize: 12,
-              whiteSpace: 'pre-wrap',
-              background: '#f6f6f6',
-              padding: 6,
-              borderRadius: 3,
-              margin: '0 0 6px',
-            }}
-          >
+        <div className="pixel-border" style={{ padding: 8, background: 'var(--color-surface)' }}>
+          <p style={{ fontSize: 13, margin: '0 0 6px', color: 'var(--color-ink)' }}>{pending.explanation}</p>
+          <pre className="pixel-code" style={{ margin: '0 0 6px' }}>
             {pending.suggestedText}
           </pre>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={handleAccept}>Accept</button>
-            <button onClick={handleReject}>Reject</button>
+            <button className="pixel-button pixel-button--primary" onClick={handleAccept}>
+              Accept
+            </button>
+            <button className="pixel-button" onClick={handleReject}>
+              Reject
+            </button>
           </div>
         </div>
       )}
