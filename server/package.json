@@ -11,26 +11,26 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "express": "5.2.1",
-    "ws": "8.21.3",
-    "yjs": "13.6.32",
-    "y-protocols": "1.0.7",
-    "lib0": "^0.2.102",
-    "@anthropic-ai/sdk": "0.128.0",
     "dockerode": "5.0.1",
-    "tar-stream": "3.2.1",
+    "dotenv": "^17.0.0",
     "esbuild": "0.28.2",
+    "express": "5.2.1",
+    "groq-sdk": "^1.6.0",
+    "lib0": "^0.2.102",
+    "tar-stream": "3.2.1",
     "wrangler": "^4.0.0",
-    "zod": "^4.6.5",
-    "dotenv": "^17.0.0"
+    "ws": "8.21.3",
+    "y-protocols": "1.0.7",
+    "yjs": "13.6.32",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "typescript": "6.0.3",
-    "tsx": "4.23.15",
-    "@types/node": "^22",
-    "@types/express": "5.0.6",
-    "@types/ws": "8.18.1",
     "@types/dockerode": "4.0.1",
+    "@types/express": "5.0.6",
+    "@types/node": "^22",
+    "@types/ws": "8.18.1",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
     "vitest": "^3.0.0",
     "y-websocket": "3.1.0"
   }

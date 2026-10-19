@@ -1,51 +1,35 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type * as monaco from 'monaco-editor'
 import * as Y from 'yjs'
 
-const ENABLED_KEY = 'together:ai-enabled'
-
 interface AIPanelProps {
-    ydoc: Y.Doc | null 
-    editor: monaco.editor.IStandaloneCodeEditor | null 
+  ydoc: Y.Doc | null
+  editor: monaco.editor.IStandaloneCodeEditor | null
 }
 
-const readStoredEnabled = (): boolean => {
-  try {
-    const raw = localStorage.getItem(ENABLED_KEY)
-    return raw === null ? true : raw === 'true'
-  } catch {
-    return true
-  }
+type Suggestion = {
+  id: string
+  explanation: string
+  suggestedText: string
+  anchorStart: Y.RelativePosition
+  anchorEnd: Y.RelativePosition
 }
 
-export function AIPanel({ydoc, editor} : AIPanelProps) {
-  const [enabled, setEnabled] = useState(readStoredEnabled)
-
-  const toggleEnabled = () => {
-    const next = !enabled
-    setEnabled(next)
-    try {
-      localStorage.setItem(ENABLED_KEY, String(next))
-    } catch {
-      // ignore — worst case the toggle doesn't persist across reloads
-    }
-  }
-
-  // TODO (you): prompt + pending suggestion state go here. See the plan below.
+/** Only ever rendered while the AI toggle (owned by App, via useAIEnabled)
+ *  is on — App mounts/unmounts this component entirely rather than this
+ *  component hiding its own contents, so it can stay a plain, constant-size
+ *  panel with no on/off logic of its own. */
+export function AIPanel({ ydoc, editor }: AIPanelProps) {
   const [prompt, setPrompt] = useState('')
-
-  type Suggestion = {
-    id: string
-    explanation: string 
-    diffPreview: string
-    anchorStart: Y.RelativePosition
-    anchorEnd: Y.RelativePosition
-  }
-
   const [pending, setPending] = useState<Suggestion | null>(null)
+  const [isAsking, setIsAsking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  // Guards against a slow, superseded request overwriting state set by a
+  // later one — bumped on every Ask, compared when each response lands.
+  const requestIdRef = useRef(0)
 
-  const handleAsk = () => {
-    if (!editor || !ydoc || !enabled || !prompt.trim()) return
+  const handleAsk = async () => {
+    if (!editor || !ydoc || !prompt.trim() || isAsking) return
 
     const selection = editor.getSelection()
     const model = editor.getModel()
@@ -57,13 +41,42 @@ export function AIPanel({ydoc, editor} : AIPanelProps) {
     const anchorStart = Y.createRelativePositionFromTypeIndex(ytext, startOffset)
     const anchorEnd = Y.createRelativePositionFromTypeIndex(ytext, endOffset)
 
-    setTimeout(() => setPending({
-      id: crypto.randomUUID(),
-      explanation: 'place holder explanation',
-      diffPreview: '+++ diff',
-      anchorStart,
-      anchorEnd,
-    }), 600)
+    const requestId = ++requestIdRef.current
+    setIsAsking(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          fullText: model.getValue(),
+          selectionStart: startOffset,
+          selectionEnd: endOffset,
+        }),
+      })
+      const data = await res.json()
+      if (requestId !== requestIdRef.current) return // superseded by a newer Ask
+
+      if (!res.ok) {
+        setError(typeof data.error === 'string' ? data.error : 'AI request failed')
+        return
+      }
+
+      setPending({
+        id: crypto.randomUUID(),
+        explanation: data.explanation,
+        suggestedText: data.suggestedText,
+        anchorStart,
+        anchorEnd,
+      })
+    } catch {
+      if (requestId !== requestIdRef.current) return
+      setError('Could not reach the server')
+    } finally {
+      if (requestId === requestIdRef.current) setIsAsking(false)
+    }
   }
 
   const handleAccept = () => {
@@ -77,7 +90,7 @@ export function AIPanel({ydoc, editor} : AIPanelProps) {
     const end = Y.createAbsolutePositionFromRelativePosition(pending.anchorEnd, ydoc)
 
     if (!start || !end) {
-      console.warn('suggestion is stale — the anchored text no longer exists, discarding')
+      setError('That suggestion no longer applies — the code it was based on has changed.')
       setPending(null)
       return
     }
@@ -86,33 +99,69 @@ export function AIPanel({ydoc, editor} : AIPanelProps) {
       if (end.index > start.index) {
         ytext.delete(start.index, end.index - start.index)
       }
-      ytext.insert(start.index, pending.diffPreview)
+      ytext.insert(start.index, pending.suggestedText)
     })
 
     setPending(null)
   }
 
   const handleReject = () => {
-    console.log('reject', pending?.id)
     setPending(null)
   }
 
   return (
-    <div style={{ width: 320, borderLeft: '1px solid #ddd', display: 'flex', flexDirection: 'column', padding: 12 }}>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-        <input type="checkbox" checked={enabled} onChange={toggleEnabled} />
-        AI pair programmer
-      </label>
-      
-      <input type='text' value={prompt} disabled={!enabled} onChange={(e) => setPrompt(e.target.value)}/>
-      <button onClick={handleAsk} disabled={!enabled}>Ask</button>
+    <div
+      style={{
+        width: 320,
+        flexShrink: 0,
+        borderLeft: '1px solid #ddd',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: 12,
+        gap: 8,
+      }}
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleAsk()
+        }}
+        style={{ display: 'flex', gap: 4 }}
+      >
+        <input
+          type="text"
+          value={prompt}
+          disabled={isAsking}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Ask the AI..."
+          style={{ flex: 1, minWidth: 0 }}
+        />
+        <button type="submit" disabled={isAsking || !prompt.trim() || !editor || !ydoc}>
+          {isAsking ? '…' : 'Ask'}
+        </button>
+      </form>
+
+      {error && <p style={{ color: '#c33', fontSize: 12, margin: 0 }}>{error}</p>}
 
       {pending && (
-        <div>
-            <p>{pending.explanation}</p>
-            <pre>{pending.diffPreview}</pre>
+        <div style={{ border: '1px solid #ddd', borderRadius: 4, padding: 8 }}>
+          <p style={{ fontSize: 13, margin: '0 0 6px' }}>{pending.explanation}</p>
+          <pre
+            style={{
+              fontSize: 12,
+              whiteSpace: 'pre-wrap',
+              background: '#f6f6f6',
+              padding: 6,
+              borderRadius: 3,
+              margin: '0 0 6px',
+            }}
+          >
+            {pending.suggestedText}
+          </pre>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleAccept}>Accept</button>
             <button onClick={handleReject}>Reject</button>
+          </div>
         </div>
       )}
     </div>

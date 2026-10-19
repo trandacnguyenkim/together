@@ -5,11 +5,12 @@ import { useYjs } from './editor/useYjs.js'
 import { useLocalUser } from './editor/presence.js'
 import { PresenceBar } from './editor/PresenceBar.js'
 import { AIPanel } from './editor/AIPanel.js'
+import { useAIEnabled } from './editor/useAIEnabled.js'
 
 interface HealthResponse {
   ok: boolean
   docker: { daemonReachable: boolean; imagePresent: boolean; error?: string }
-  anthropicKeyConfigured: boolean
+  groqKeyConfigured: boolean
   cloudflareConfigured: boolean
 }
 
@@ -32,6 +33,7 @@ export function App() {
   const room = useRoom()
   const localUser = useLocalUser()
   const yjs = useYjs(room, editor, localUser)
+  const [aiEnabled, toggleAIEnabled] = useAIEnabled()
 
   const handleEditorMount = useCallback((e: monaco.editor.IStandaloneCodeEditor) => {
     setEditor(e)
@@ -66,14 +68,23 @@ export function App() {
             </span>
           )}
         </div>
-        <PresenceBar provider={yjs?.provider ?? null} localUser={localUser} connected={yjs?.connected ?? false} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <PresenceBar provider={yjs?.provider ?? null} localUser={localUser} connected={yjs?.connected ?? false} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 12 }}>
+            <input type="checkbox" checked={aiEnabled} onChange={toggleAIEnabled} />
+            AI pair programmer
+          </label>
+        </div>
+        
+        
       </header>
 
       <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-        <div style={{ flex: 1, minHeight: 0 }}>
+        <div style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
           <Editor onMount={handleEditorMount} />
         </div>
-        <AIPanel ydoc={yjs?.ydoc ?? null} editor={editor} />
+        {aiEnabled && <AIPanel ydoc={yjs?.ydoc ?? null} editor={editor} />}
       </div>
     </div>
   )
