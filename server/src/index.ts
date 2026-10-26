@@ -6,8 +6,10 @@ import { WebSocketServer, type WebSocket } from 'ws'
 import { setupWSConnection, setPersistence, docs } from './yjs/ws.js'
 import { filePersistence, flushAllOnExit } from './yjs/persistence.js'
 import { ensureImagePulled } from './docker/client.js'
+import { sweepStaleSandboxes } from './runner/docker.js'
 import { healthRouter } from './routes/health.js'
 import { AIRouter } from './routes/ai.js'
+import { RunRouter } from './routes/run.js'
 
 const PORT = Number(process.env.PORT ?? 3001)
 
@@ -17,6 +19,7 @@ const app = express()
 app.use(express.json())
 app.use('/api', healthRouter)
 app.use('/api', AIRouter)
+app.use('/api', RunRouter)
 
 const server = http.createServer(app)
 
@@ -48,6 +51,9 @@ server.listen(PORT, () => {
 
 // Boot-time checks that become UI banners, not runtime 500s.
 void ensureImagePulled()
+void sweepStaleSandboxes().then((count) => {
+  if (count > 0) console.log(`[docker] removed ${count} stale sandbox container(s) from a previous run`)
+})
 if (!process.env.GROQ_API_KEY) {
   console.warn('[server] GROQ_API_KEY is not set — the AI panel will be unavailable.')
 }
