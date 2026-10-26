@@ -229,7 +229,10 @@ body {
   content: attr(data-tooltip);
   position: absolute;
   top: calc(100% + 10px);
-  transform: translateX(-20%);
+  /* Right-anchored, not left — every current [data-tooltip] button sits in
+     the right-hand cluster of the header, so growing the tooltip leftward
+     (into free space) instead of rightward is what keeps it on screen. */
+  right: 0;
   background: var(--color-surface);
   color: var(--color-ink);
   border: var(--border-width) solid var(--color-border);

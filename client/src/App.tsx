@@ -7,6 +7,8 @@ import { PresenceBar } from './editor/PresenceBar.js'
 import { AIPanel } from './editor/AIPanel.js'
 import { useAIEnabled } from './editor/useAIEnabled.js'
 import { useTheme } from './editor/useTheme.js'
+import { OutputPanel } from './editor/OutputPanel.js'
+import { useTerminalEnabled } from './editor/useTerminalEnabled.js'
 
 /** 8x8 pixel-grid icons, drawn as rects rather than a path so edges stay
  *  crisp at this size — matches the blocky/pixel look rather than a smooth
@@ -51,6 +53,22 @@ function MoonIcon() {
   )
 }
 
+/** A ">_" prompt glyph — the chevron and cursor read as "terminal" at a
+ *  glance without needing an outer frame, same free-form filled-dot style
+ *  as Sun/Moon rather than a bordered box icon. */
+function TerminalIcon() {
+  return (
+    <svg viewBox="0 0 8 8" width={14} height={14} shapeRendering="crispEdges" fill="currentColor" aria-hidden="true">
+      <rect x={0} y={1} width={2} height={1} />
+      <rect x={1} y={2} width={2} height={1} />
+      <rect x={2} y={3} width={2} height={1} />
+      <rect x={1} y={4} width={2} height={1} />
+      <rect x={0} y={5} width={2} height={1} />
+      <rect x={5} y={5} width={3} height={1} />
+    </svg>
+  )
+}
+
 interface HealthResponse {
   ok: boolean
   docker: { daemonReachable: boolean; imagePresent: boolean; error?: string }
@@ -78,6 +96,7 @@ export function App() {
   const localUser = useLocalUser()
   const yjs = useYjs(room, editor, localUser)
   const [aiEnabled, toggleAIEnabled] = useAIEnabled()
+  const [terminalEnabled, toggleTerminalEnabled] = useTerminalEnabled()
   const [theme, toggleTheme] = useTheme()
 
   const handleEditorMount = useCallback((e: monaco.editor.IStandaloneCodeEditor) => {
@@ -142,17 +161,30 @@ export function App() {
             className={`pixel-button${aiEnabled ? ' pixel-button--toggled' : ''}`}
             onClick={toggleAIEnabled}
             aria-pressed={aiEnabled}
-            data-tooltip="Toggle AI pair programmer"
+            data-tooltip={terminalEnabled ? 'Turn on AI' : 'Turn off AI'}
           >
             AI
+          </button>
+          <button
+            type="button"
+            className={`pixel-button pixel-button--icon${terminalEnabled ? ' pixel-button--toggled' : ''}`}
+            onClick={toggleTerminalEnabled}
+            aria-pressed={terminalEnabled}
+            aria-label="Toggle terminal / sandbox runner"
+            data-tooltip={terminalEnabled ? 'Hide Terminal' : 'Show Terminal'}
+          >
+            <TerminalIcon />
           </button>
           <PresenceBar provider={yjs?.provider ?? null} localUser={localUser} connected={yjs?.connected ?? false} />
         </div>
       </header>
 
       <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-        <div className="pixel-border" style={{ flex: 1, minHeight: 0, minWidth: 0, margin: 8 }}>
-          <Editor theme={theme} onMount={handleEditorMount} />
+        <div style={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <div className="pixel-border" style={{ flex: 1, minHeight: 0, margin: 8 }}>
+            <Editor theme={theme} onMount={handleEditorMount} />
+          </div>
+          {terminalEnabled && <OutputPanel room={room} />}
         </div>
         {aiEnabled && <AIPanel ydoc={yjs?.ydoc ?? null} editor={editor} />}
       </div>
